@@ -1,0 +1,54 @@
+<!-- DESIGN BY Lingbo Xie 20150315 -->
+<!-- 快速发布配置文件 -->
+<xml>
+	<config> 	
+	 
+	  <hosts>
+	  	<!-- 主机配置-支持多条 -->
+		<host name="185">
+		  <ip>192.168.0.185</ip> 
+		</host>
+	  </hosts>
+	  
+	  <users>
+  		<!-- 用户配置-支持多条 -->
+		<user name="bozewx">
+			<username>bozewx</username>
+			<password>boze1234</password>
+		</user>
+	  </users>
+	  
+	  <svns>
+  		<!-- svn配置-支持多条 -->
+		<svn name="185">
+			<username>xielingbo</username>
+			<password>031116191</password>
+			<path>svn://192.168.0.185/trunk/code/</path>
+		</svn>
+	  </svns>
+	  	  
+	  <projects>
+	  	<!-- 应用配置-支持多条 -->
+		<project name="qhq_manager" path="E:\warPublish\">
+			<!-- 发布配置-支持多条 -->
+			<publish>
+				<index>3</index>
+				<host>185</host>
+				<user>bozewx</user>
+				<svn>185</svn>
+				<fileType>files</fileType><!-- file表示单文件需要解压包 -->
+				<srcPath>/src</srcPath><!-- 编译时src目录，相对于project.path+project.name位置 -->
+				<resourcePath>/resources</resourcePath><!-- 编译时resource目录，相对于project.path+project.name位置 -->
+				<libPath>/lib</libPath><!-- 编译时jar目录，相对于project.path+project.name位置 -->
+				<webPath>WebContent</webPath><!-- 本地发布目录 -->
+				<compileType>exec</compileType><!-- 编译类型 web jar exec-->
+				<mainClass>jar</mainClass><!-- 编译类型为exec时需要指定 -->
+				<remote>/home/bozewx/uploads/</remote><!-- 服务器发布目录 -->
+				<command>./bin/startEMobile.sh</command><!-- 服务器发布后启动脚本 -->
+				<unpack><![CDATA[unzip -o SRCNAME -d DESTNAME]]></unpack><!-- 如果仅使用发布fileType为war才会调用该命令 -->
+				<sleep>1000</sleep>
+			</publish>
+		</project>
+	  </projects>
+	</config>  
+</xml>
