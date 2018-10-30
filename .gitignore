@@ -1,2 +1,13 @@
 
 *.class
+target/test.jpg
+target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+target/maven-archiver/pom.properties
+target/config.xml
+target/config-template.xml
+target/classes/test.jpg
+target/classes/config.xml
+target/classes/config-template.xml
+target/autoPublish-1.0-SNAPSHOT.jar

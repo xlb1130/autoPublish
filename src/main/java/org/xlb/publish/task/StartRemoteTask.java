@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.xlb.publish.bean.PublishBean;
+import org.xlb.publish.svn.tools.ConsoleLog;
 import org.xlb.publish.util.SFtpUtil;
 
 /**
@@ -16,13 +17,14 @@ import org.xlb.publish.util.SFtpUtil;
  * @version V1.0
  *
  */
-public class StartRemoteTask implements Runnable {
+public class StartRemoteTask extends ConsoleLog implements Runnable {
 
 	private List<PublishBean> publishBeans;
 	
 	private Map<String,Runnable> jobsMap;
 	
 	public StartRemoteTask(List<PublishBean> publishBeans, Map<String, Runnable> jobsMap){
+		super.log = true;
 		this.setJobsMap(jobsMap);
 		this.publishBeans = publishBeans;
 	}
@@ -53,8 +55,7 @@ public class StartRemoteTask implements Runnable {
 					ftplist.close();
 					Thread.currentThread().sleep(Long.parseLong(publishBean.getPublish().getSleep()));
 				}
-				System.out.println("Start "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-						+publishBean.getProject().getName()+" ...................Complete!");
+				super.log("启动成功");
 			}			
 		}  catch (Exception e) {
 			if (ftplist != null)

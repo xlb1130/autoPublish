@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 
 import org.xlb.publish.bean.PublishBean;
+import org.xlb.publish.svn.tools.ConsoleLog;
 import org.xlb.publish.util.DateUtil;
 import org.xlb.publish.util.SFtpUtil;
 
@@ -18,7 +19,7 @@ import com.jcraft.jsch.JSchException;
  * @version V1.0
  *
  */
-public class PublishTask implements Runnable {
+public class PublishTask extends ConsoleLog implements Runnable {
 
 	private PublishBean publishBean;
 	
@@ -27,64 +28,59 @@ public class PublishTask implements Runnable {
 	}
 	
 	public PublishTask(){
-		
+		super.log = true;
 	}
 	
-//	private void doUpload(File file, ChannelSftp sftp,String path) throws Exception{
-//		if(file.isDirectory()){
-//			try{
-//				sftp.mkdir(path+file.getName());
-//			}catch(Exception e){
-//			}
-//			sftp.cd(path+file.getName());
-//			File[] fileList = file.listFiles();
-//			for(int i=0; i<fileList.length; i++){
-//				doUpload((File) fileList[i], sftp,path+file.getName()+"/");
-//			}
-//			sftp.cd(path);
-//		}else{
+	private void doUpload(File file, ChannelSftp sftp,String path) throws Exception{
+		super.log("开始发布……");
+		if(file.isDirectory()){
+			try{
+				sftp.mkdir(path+file.getName());
+			}catch(Exception e){
+			}
+			sftp.cd(path+file.getName());
+			File[] fileList = file.listFiles();
+			for(int i=0; i<fileList.length; i++){
+				doUpload(fileList[i], sftp,path+file.getName()+"/");
+			}
+			sftp.cd(path);
+		}else{
 //			System.out.println("SRC-PATH: "+path+file.getName());
 //			System.out.println("LOCAL-PATH: "+file.getAbsolutePath());
-//			sftp.put(new FileInputStream(file), file.getName(),ChannelSftp.OVERWRITE);
-//			return;
-//		}
-//	}
+			sftp.put(new FileInputStream(file), file.getName(),ChannelSftp.OVERWRITE);
+			return;
+		}
+		super.log("发布成功");
+	}
 
 	public void run() {
-		SFtpUtil ftplist = null;
+		SFtpUtil ftpList;
 		try {
-			ftplist = new SFtpUtil(publishBean.getIp(), publishBean.getUsername(), publishBean.getPassword());
+			ftpList = new SFtpUtil(publishBean.getIp(), publishBean.getUsername(), publishBean.getPassword());
 		} catch (JSchException e) {
-			System.out.println("Publish "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+publishBean.getProject().getName()+" ...................Get FTP Instanse Failed!");
+			super.log("远程主机连接失败");
 			e.printStackTrace();
 			return;
 		}
 		
 		try {			
 			//备份工程
-			ftplist.startRemoteServer("cd  "+publishBean.getPublish().getRemote()+"; tar -cvf  "
+			ftpList.startRemoteServer("cd  "+publishBean.getPublish().getRemote()+"; tar -cvf  "
 					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4)
 					+"-"+DateUtil.getCurrentDate("yyyyMMddhhmmss")+".tar  " 
 					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4));
 			//备份 war包
-//			ftplist.startRemoteServer("cd  "+publishBean.getRemote()+";move  "
+//			ftpList.startRemoteServer("cd  "+publishBean.getRemote()+";move  "
 //					+publishBean.getProcName()
 //					+"  "+publishBean.getProcName().split(".")[0]+"_"
 //					+DateUtil.getCurrentDate("yyyyMMddhhmmss")
 //					+publishBean.getProcName().split(".")[1]);
-			System.out.println("Tar "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+publishBean.getPublish().getRemote()
-					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4)
-					+" ...................Complete!");
+			super.log("备份成功");
 		}catch (Exception e) {
-			if (ftplist != null){
-				ftplist.close();
+			if (ftpList != null){
+				ftpList.close();
 			}
-			System.out.println("Tar "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+publishBean.getPublish().getRemote()
-					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4)
-					+" ...................Fialed!");
+			super.log("备份失败");
 			e.printStackTrace();
 			return;
 		}
@@ -92,73 +88,59 @@ public class PublishTask implements Runnable {
 		//上传
 		ChannelSftp sftp = null;
 		try {
-			sftp = ftplist.getSftpInstance();
+			sftp = ftpList.getSftpInstance();
 			File file = new File(publishBean.getProject().getPath()+publishBean.getProject().getName());
 			sftp.cd(publishBean.getPublish().getRemote());
 			//之前是先手动解压后上传，改为直接上传包，然后解压
-			//this.doUpload(file, sftp,publishBean.getRemote());		
-			sftp.put(new FileInputStream(file), file.getName(),ChannelSftp.OVERWRITE);
-			System.out.println("Upload "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+publishBean.getPublish().getRemote()
-					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4)
-					+" ...................Complete!");
+			this.doUpload(file, sftp,publishBean.getPublish().getRemote());
+//			sftp.put(new FileInputStream(file), file.getName(),ChannelSftp.OVERWRITE);
 		} catch (Exception e) {
-			System.out.println("Upload "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+publishBean.getPublish().getRemote()
-					+publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4)
-					+" ...................Failed!");
+			super.log("发布失败");
 			e.printStackTrace();
 			if (sftp != null){
 				sftp.disconnect();
 			}
-			if (ftplist != null){
-				ftplist.close();
+			if (ftpList != null){
+				ftpList.close();
 			}
 			return;
 		}
 		
-		String command  = "";
-		//解压
-		try {	
-			//尝试创建文件夹，应对第一次发布的情况
-			try{
-				sftp.mkdir(publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4));
-			}catch(Exception e){				
-				e.printStackTrace();
+		String command  = publishBean.getPublish().getUnpack();
+		if(command != null && !"".equals(command)){
+			//解压
+			try {
+				//尝试创建文件夹，应对第一次发布的情况
+				try{
+					sftp.mkdir(publishBean.getProject().getName().substring(0,publishBean.getProject().getName().length()-4));
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+				command = command.replace(
+						"SRCNAME", publishBean.getProject().getName());
+				command = command.replace("DESTNAME",publishBean.getProject().getName()
+						.substring(0,publishBean.getProject().getName().length()-4));
+				ftpList.startRemoteServer("cd  "+publishBean.getPublish().getRemote()+";"+command);
+				super.log("解压成功");
+			}catch (Exception e) {
+				if (sftp != null){
+					sftp.disconnect();
+				}
+				if (ftpList != null){
+					ftpList.close();
+				}
+				super.log("失败");
 			}
-			
-			command = publishBean.getPublish().getUnpack().replace(
-					"SRCNAME", publishBean.getProject().getName());
-			command = command.replace("DESTNAME",publishBean.getProject().getName()
-					.substring(0,publishBean.getProject().getName().length()-4));
-			ftplist.startRemoteServer("cd  "+publishBean.getPublish().getRemote()+";"+command);
-			System.out.println("Upack "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+" With command : "+command
-					+" ...................Complete! ");
-		}catch (Exception e) {
-			if (sftp != null){
-				sftp.disconnect();
-			}
-			if (ftplist != null){
-				ftplist.close();
-			}
-			System.out.println("Upack "+publishBean.getUsername()+"@"+publishBean.getIp()+":"
-					+" With command : "+command
-					+" ...................Failed! ");
-			e.printStackTrace();
+
 		}
-		
 		try{
 			if (sftp != null){
 				sftp.disconnect();
 			}
-			if (ftplist != null){
-				ftplist.close();
+			if (ftpList != null){
+				ftpList.close();
 			}
-		}catch(Exception e ){
-			
-		}
-		
+		}catch(Exception e ){}
 		return;
 	}
 

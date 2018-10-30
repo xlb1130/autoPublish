@@ -45,7 +45,8 @@
 				<mainClass>jar</mainClass><!-- 编译类型为exec时需要指定 -->
 				<remote>/home/bozewx/uploads/</remote><!-- 服务器发布目录 -->
 				<command>./bin/startEMobile.sh</command><!-- 服务器发布后启动脚本 -->
-				<unpack><![CDATA[unzip -o SRCNAME -d DESTNAME]]></unpack><!-- 如果仅使用发布fileType为war才会调用该命令 -->
+				<!--<unpack><![CDATA[unzip -o SRCNAME -d DESTNAME]]></unpack>&lt;!&ndash; 如果仅使用发布fileType为war才会调用该命令 不使用请留空 &ndash;&gt;-->
+				<unpack></unpack><!-- 如果仅使用发布fileType为war才会调用该命令 -->
 				<sleep>1000</sleep>
 			</publish>
 		</project>
